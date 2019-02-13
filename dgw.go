@@ -14,6 +14,7 @@ import (
 	"github.com/achiku/varfmt"
 	_ "github.com/lib/pq" // postgres
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 // Queryer database/sql compatible query interface
@@ -207,6 +208,8 @@ func PgLoadColumnDef(db Queryer, schema string, table string) ([]*PgColumn, erro
 
 // PgLoadTableDef load Postgres table definition
 func PgLoadTableDef(db Queryer, schema string) ([]*PgTable, error) {
+
+	log.Infof("Finding tables in %s", schema)
 	tbDefs, err := db.Query(pgLoadTableDef, schema)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load table def")
@@ -221,6 +224,8 @@ func PgLoadTableDef(db Queryer, schema string) ([]*PgTable, error) {
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to scan")
 		}
+
+		log.Infof("Finding columns for %s", t.Name)
 		cols, err := PgLoadColumnDef(db, schema, t.Name)
 		if err != nil {
 			return nil, errors.Wrap(err, fmt.Sprintf("failed to get columns of %s", t.Name))
