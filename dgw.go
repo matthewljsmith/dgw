@@ -1,4 +1,3 @@
-// go:generate go-bindata -o bindata.go template mapconfig
 package main
 
 import (
@@ -285,28 +284,6 @@ func PgTableToStruct(t *PgTable, typeCfg *PgTypeMapConfig, keyConfig *AutoKeyMap
 	return s, nil
 }
 
-// PgExecuteDefaultTmpl execute struct template with *Struct
-func PgExecuteDefaultTmpl(st *StructTmpl, path string) ([]byte, error) {
-	var src []byte
-	d, err := Asset(path)
-	if err != nil {
-		return src, errors.Wrap(err, "failed to load asset")
-	}
-	tpl, err := template.New("struct").Funcs(tmplFuncMap).Parse(string(d))
-	if err != nil {
-		return src, errors.Wrap(err, "failed to parse template")
-	}
-	buf := new(bytes.Buffer)
-	if err := tpl.Execute(buf, st); err != nil {
-		return src, errors.Wrap(err, fmt.Sprintf("failed to execute template:\n%s", src))
-	}
-	src, err = format.Source(buf.Bytes())
-	if err != nil {
-		return src, errors.Wrap(err, fmt.Sprintf("failed to format code:\n%s", src))
-	}
-	return src, nil
-}
-
 // PgExecuteCustomTmpl execute custom template
 func PgExecuteCustomTmpl(st *StructTmpl, customTmpl string) ([]byte, error) {
 	var src []byte
@@ -337,14 +314,8 @@ func PgCreateStruct(
 		return src, errors.Wrap(err, "faield to load table definitions")
 	}
 	cfg := &PgTypeMapConfig{}
-	if typeMapPath == "" {
-		if _, err := toml.Decode(typeMap, cfg); err != nil {
-			return src, errors.Wrap(err, "faield to read type map")
-		}
-	} else {
-		if _, err := toml.DecodeFile(typeMapPath, cfg); err != nil {
-			return src, errors.Wrap(err, fmt.Sprintf("failed to decode type map file %s", typeMapPath))
-		}
+	if _, err := toml.DecodeFile(typeMapPath, cfg); err != nil {
+		return src, errors.Wrap(err, fmt.Sprintf("failed to decode type map file %s", typeMapPath))
 	}
 	for _, tbl := range tbls {
 		if contains(tbl.Name, exTbls) {
@@ -364,17 +335,6 @@ func PgCreateStruct(
 				return nil, errors.Wrap(err, "PgExecuteCustomTmpl failed")
 			}
 			src = append(src, s...)
-		} else {
-			s, err := PgExecuteDefaultTmpl(&StructTmpl{Struct: st}, "template/struct.tmpl")
-			if err != nil {
-				return src, errors.Wrap(err, "faield to execute template")
-			}
-			m, err := PgExecuteDefaultTmpl(&StructTmpl{Struct: st}, "template/method.tmpl")
-			if err != nil {
-				return src, errors.Wrap(err, "faield to execute template")
-			}
-			src = append(src, s...)
-			src = append(src, m...)
 		}
 	}
 	return src, nil
