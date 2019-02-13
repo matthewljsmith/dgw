@@ -7,6 +7,7 @@ import (
 	"go/format"
 	"io/ioutil"
 	"sort"
+	"strings"
 	"text/template"
 
 	"github.com/BurntSushi/toml"
@@ -231,16 +232,27 @@ func PgLoadTableDef(db Queryer, schema string) ([]*PgTable, error) {
 }
 
 func contains(v string, l []string) bool {
+
+	if strings.HasPrefix(v, "character varying") {
+		v = "character varying"
+	} else if strings.HasPrefix(v, "numeric") {
+		v = "numeric"
+	} else if strings.HasPrefix(v, "character") {
+		v = "character"
+	}
+
 	sort.Strings(l)
 	i := sort.SearchStrings(l, v)
 	if i < len(l) && l[i] == v {
 		return true
 	}
+
 	return false
 }
 
 // PgConvertType converts type
 func PgConvertType(col *PgColumn, typeCfg *PgTypeMapConfig) string {
+
 	cfg := map[string]TypeMap(*typeCfg)
 	typ := cfg["default"].NotNullGoType
 	for _, v := range cfg {
