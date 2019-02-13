@@ -279,6 +279,12 @@ func PgColToField(col *PgColumn, typeCfg *PgTypeMapConfig) (*StructField, error)
 		Type:   stfType,
 		Column: col,
 	}
+
+	// as a hack, if the stf.Name is Memberid convert it to MemberID
+	if stf.Name == "Memberid" {
+		stf.Name = "MemberID"
+	}
+
 	return stf, nil
 }
 
