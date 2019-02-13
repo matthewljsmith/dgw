@@ -311,7 +311,7 @@ func PgCreateStruct(
 
 	// if additionalImport is present add it
 	if len(additionalImport) > 0 {
-		importDef := []byte(fmt.Sprintf(`import\n(\n\t"%s"\n)`, additionalImport))
+		importDef := []byte(fmt.Sprintf(`import\n(\n\t%s\n)`, additionalImport))
 		src = append(src, importDef...)
 	}
 
