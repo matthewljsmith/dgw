@@ -304,10 +304,16 @@ func PgExecuteCustomTmpl(st *StructTmpl, customTmpl string) ([]byte, error) {
 
 // PgCreateStruct creates struct from given schema
 func PgCreateStruct(
-	db Queryer, schema, typeMapPath, pkgName, customTmpl string, exTbls []string) ([]byte, error) {
+	db Queryer, schema, typeMapPath, pkgName, customTmpl string, exTbls []string, additionalImport string) ([]byte, error) {
 	var src []byte
 	pkgDef := []byte(fmt.Sprintf("package %s\n\n", pkgName))
 	src = append(src, pkgDef...)
+
+	// if additionalImport is present add it
+	if len(additionalImport) > 0 {
+		importDef := []byte(fmt.Sprintf(`import\n(\n\t"%s"\n)`, additionalImport))
+		src = append(src, importDef...)
+	}
 
 	tbls, err := PgLoadTableDef(db, schema)
 	if err != nil {
