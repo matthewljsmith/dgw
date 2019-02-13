@@ -20,7 +20,6 @@ var (
 	customTmpl       = kingpin.Flag("template", "custom template path").String()
 	outFile          = kingpin.Flag("output", "output file path").Short('o').String()
 	noQueryInterface = kingpin.Flag("no-interface", "output without Queryer interface").Bool()
-	additionalImport = kingpin.Flag("import", "Allows an additional import into the header").String()
 )
 
 func main() {
@@ -31,7 +30,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	st, err := PgCreateStruct(conn, *schema, *typeMapFilePath, *pkgName, *customTmpl, *exTbls, *additionalImport)
+	st, err := PgCreateStruct(conn, *schema, *typeMapFilePath, *pkgName, *customTmpl, *exTbls)
 	if err != nil {
 		log.Fatal(err)
 	}
