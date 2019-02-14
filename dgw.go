@@ -171,10 +171,11 @@ type StructTmpl struct {
 
 // StructField go struct field
 type StructField struct {
-	Name   string
-	Type   string
-	Tag    string
-	Column *PgColumn
+	Name     string
+	Type     string
+	BaseType string
+	Tag      string
+	Column   *PgColumn
 }
 
 // PgLoadTypeMapFromFile load type map from toml file
@@ -284,10 +285,18 @@ func PgConvertType(col *PgColumn, typeCfg *PgTypeMapConfig) string {
 // PgColToField converts pg column to go struct field
 func PgColToField(col *PgColumn, typeCfg *PgTypeMapConfig) (*StructField, error) {
 	stfType := PgConvertType(col, typeCfg)
+
+	// grab the base type as well for mocking
+	old := col.NotNull
+	col.NotNull = true
+	baseType := PgConvertType(col, typeCfg)
+	col.NotNull = old
+
 	stf := &StructField{
-		Name:   varfmt.PublicVarName(col.Name),
-		Type:   stfType,
-		Column: col,
+		Name:     varfmt.PublicVarName(col.Name),
+		BaseType: baseType,
+		Type:     stfType,
+		Column:   col,
 	}
 
 	// as a hack, if the stf.Name is Memberid convert it to MemberID
