@@ -337,10 +337,18 @@ func PgExecuteCustomTmpl(st *StructTmpl, customTmpl string) ([]byte, error) {
 
 // PgCreateStruct creates struct from given schema
 func PgCreateStruct(
-	db Queryer, schema, typeMapPath, pkgName, customTmpl string, exTbls []string) ([]byte, error) {
+	db Queryer, schema, typeMapPath, pkgName, customTmpl, importTmpl string, exTbls []string) ([]byte, error) {
 	var src []byte
 	pkgDef := []byte(fmt.Sprintf("package %s\n\n", pkgName))
 	src = append(src, pkgDef...)
+
+	if importTmpl != "" {
+		tmpl, err := ioutil.ReadFile(importTmpl)
+		if err != nil {
+			return nil, err
+		}
+		src = append(src, tmpl...)
+	}
 
 	tbls, err := PgLoadTableDef(db, schema)
 	if err != nil {
