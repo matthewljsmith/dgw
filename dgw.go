@@ -69,9 +69,13 @@ SELECT
         WHEN a.atttypid = ANY ('{uuid}'::regtype[]) AND COALESCE(pg_get_expr(ad.adbin, ad.adrelid), '') != ''
             THEN 'autogenuuid'
         ELSE format_type(a.atttypid, a.atttypmod)
-    END AS data_type
+    END AS data_type,
+    a.atttypid,
+    t.typname,
+    t.typlen
 FROM pg_attribute a
 JOIN ONLY pg_class c ON c.oid = a.attrelid
+JOIN ONLY pg_type t ON t.oid = a.atttypid
 JOIN ONLY pg_namespace n ON n.oid = c.relnamespace
 LEFT JOIN pg_constraint ct ON ct.conrelid = c.oid
 AND a.attnum = ANY(ct.conkey) AND ct.contype = 'p'
@@ -80,7 +84,7 @@ WHERE a.attisdropped = false
 AND n.nspname = $1
 AND c.relname = $2
 AND a.attnum > 0
-ORDER BY a.attnum
+ORDER BY a.attnum;
 `
 
 const pgLoadTableDef = `
@@ -147,6 +151,9 @@ type PgColumn struct {
 	NotNull      bool
 	DefaultValue sql.NullString
 	IsPrimaryKey bool
+	TypeOID      int32
+	TypeName     string
+	TypeLength   int16
 }
 
 // Struct go struct
@@ -197,6 +204,9 @@ func PgLoadColumnDef(db Queryer, schema string, table string) ([]*PgColumn, erro
 			&c.DefaultValue,
 			&c.IsPrimaryKey,
 			&c.DDLType,
+			&c.TypeOID,
+			&c.TypeName,
+			&c.TypeLength,
 		)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to scan")
