@@ -56,10 +56,4 @@ func main() {
 	if _, err := out.Write(src); err != nil {
 		log.Fatal(err)
 	}
-	if *outFile != "" {
-		params := []string{"-w", *outFile}
-		if err := exec.Command("goimports", params...).Run(); err != nil {
-			log.Fatalf("failed to goimports: %s", err)
-		}
-	}
 }
