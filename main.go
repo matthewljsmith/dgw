@@ -4,7 +4,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"os/exec"
 
 	"gopkg.in/alecthomas/kingpin.v2"
 )
