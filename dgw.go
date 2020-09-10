@@ -12,7 +12,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/achiku/varfmt"
-	_ "github.com/lib/pq" // postgres
+	"github.com/lib/pq" // postgres
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
@@ -84,6 +84,7 @@ WHERE a.attisdropped = false
 AND n.nspname = $1
 AND c.relname = $2
 AND a.attnum > 0
+AND TRUE IS DISTINCT FROM ( pg_catalog.col_description(a.attrelid, a.attnum) ~ ANY ( $3::text[] ))
 ORDER BY a.attnum;
 `
 
@@ -188,8 +189,8 @@ func PgLoadTypeMapFromFile(filePath string) (*PgTypeMapConfig, error) {
 }
 
 // PgLoadColumnDef load Postgres column definition
-func PgLoadColumnDef(db Queryer, schema string, table string) ([]*PgColumn, error) {
-	colDefs, err := db.Query(pgLoadColumnDef, schema, table)
+func PgLoadColumnDef(db Queryer, schema string, table string, exclusions []string) ([]*PgColumn, error) {
+	colDefs, err := db.Query(pgLoadColumnDef, schema,table, pq.Array(exclusions))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load table def")
 	}
@@ -218,7 +219,7 @@ func PgLoadColumnDef(db Queryer, schema string, table string) ([]*PgColumn, erro
 }
 
 // PgLoadTableDef load Postgres table definition
-func PgLoadTableDef(db Queryer, schema string) ([]*PgTable, error) {
+func PgLoadTableDef(db Queryer, schema string,exclusions []string) ([]*PgTable, error) {
 
 	log.Infof("Finding tables in %s", schema)
 	tbDefs, err := db.Query(pgLoadTableDef, schema)
@@ -237,7 +238,7 @@ func PgLoadTableDef(db Queryer, schema string) ([]*PgTable, error) {
 		}
 
 		log.Infof("Finding columns for %s", t.Name)
-		cols, err := PgLoadColumnDef(db, schema, t.Name)
+		cols, err := PgLoadColumnDef(db, schema, t.Name,exclusions)
 		if err != nil {
 			return nil, errors.Wrap(err, fmt.Sprintf("failed to get columns of %s", t.Name))
 		}
@@ -346,7 +347,7 @@ func PgExecuteCustomTmpl(st *StructTmpl, customTmpl string) ([]byte, error) {
 
 // PgCreateStruct creates struct from given schema
 func PgCreateStruct(
-	db Queryer, schema, typeMapPath, pkgName, customTmpl, importTmpl string, exTbls []string) ([]byte, error) {
+	db Queryer, schema, typeMapPath, pkgName, customTmpl, importTmpl string, exTbls []string,exCmts []string) ([]byte, error) {
 	var src []byte
 	pkgDef := []byte(fmt.Sprintf("package %s\n\n", pkgName))
 	src = append(src, pkgDef...)
@@ -359,7 +360,7 @@ func PgCreateStruct(
 		src = append(src, tmpl...)
 	}
 
-	tbls, err := PgLoadTableDef(db, schema)
+	tbls, err := PgLoadTableDef(db, schema, exCmts)
 	if err != nil {
 		return src, errors.Wrap(err, "faield to load table definitions")
 	}

@@ -20,6 +20,7 @@ var (
 	customTmpl       = kingpin.Flag("template", "custom template path").String()
 	outFile          = kingpin.Flag("output", "output file path").Short('o').String()
 	noQueryInterface = kingpin.Flag("no-interface", "output without Queryer interface").Bool()
+	exCmts           = kingpin.Flag("not-comment", "exclude columns with a comment (description) that matches this regex").Strings()
 )
 
 func main() {
@@ -30,7 +31,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	st, err := PgCreateStruct(conn, *schema, *typeMapFilePath, *pkgName, *customTmpl, *importTmpl, *exTbls)
+	st, err := PgCreateStruct(conn, *schema, *typeMapFilePath, *pkgName, *customTmpl, *importTmpl, *exTbls, *exCmts)
 	if err != nil {
 		log.Fatal(err)
 	}
