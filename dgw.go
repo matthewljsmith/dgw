@@ -152,7 +152,7 @@ type PgColumn struct {
 	NotNull      bool
 	DefaultValue sql.NullString
 	IsPrimaryKey bool
-	TypeOID      int32
+	TypeOID      int64
 	TypeName     string
 	TypeLength   int16
 }
