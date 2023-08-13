@@ -95,7 +95,7 @@ c.relname AS table_name
 FROM pg_class c
 JOIN ONLY pg_namespace n ON n.oid = c.relnamespace
 WHERE n.nspname = $1
-AND c.relkind = 'r'
+AND c.relkind in ('r', 'v')
 ORDER BY c.relname
 `
 
